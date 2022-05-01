@@ -69,13 +69,24 @@ public abstract class AbstractCore implements Core {
     public Long branchRegister(BranchType branchType, String resourceId, String clientId, String xid,
                                String applicationData, String lockKeys) throws TransactionException {
         GlobalSession globalSession = assertGlobalSessionNotNull(xid, false);
+
         return SessionHolder.lockAndExecute(globalSession, () -> {
+            // 检查 globalSession 是否活跃 && 是否是 Begin 状态
             globalSessionStatusCheck(globalSession);
+            // 根据 mode 的类型添加 SessionManager 比如: DataBaseSessionManager
             globalSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
+            // 创建 BranchSession 对象
             BranchSession branchSession = SessionHelper.newBranchByGlobal(globalSession, branchType, resourceId,
                     applicationData, lockKeys, clientId);
+
+            // insert lock_table
             branchSessionLock(globalSession, branchSession);
+
             try {
+                // 在 branch_table 表插入一条分支事务信息
+                // insert into branch_table(xid, transaction_id, branch_id, resource_group_id, resource_id,
+                //     branch_type, status, client_id, application_data, gmt_create, gmt_modified)
+                // values (?, ?, ?, ?, ?, ?, ?, ?, ?, now(6), now(6))
                 globalSession.addBranch(branchSession);
             } catch (RuntimeException ex) {
                 branchSessionUnlock(branchSession);
@@ -87,6 +98,7 @@ public abstract class AbstractCore implements Core {
                 LOGGER.info("Register branch successfully, xid = {}, branchId = {}, resourceId = {} ,lockKeys = {}",
                     globalSession.getXid(), branchSession.getBranchId(), resourceId, lockKeys);
             }
+            // 返回分支事务 id 给 RM
             return branchSession.getBranchId();
         });
     }
