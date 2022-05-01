@@ -87,6 +87,7 @@ public class SessionHelper {
      */
     public static void endCommitted(GlobalSession globalSession) throws TransactionException {
         globalSession.changeStatus(GlobalStatus.Committed);
+        // 删除
         globalSession.end();
     }
 

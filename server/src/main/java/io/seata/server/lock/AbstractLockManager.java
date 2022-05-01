@@ -45,6 +45,7 @@ public abstract class AbstractLockManager implements LockManager {
         if (branchSession == null) {
             throw new IllegalArgumentException("branchSession can't be null for memory/file locker.");
         }
+        // order:75
         String lockKey = branchSession.getLockKey();
         if (StringUtils.isNullOrEmpty(lockKey)) {
             // no lock
@@ -125,7 +126,7 @@ public abstract class AbstractLockManager implements LockManager {
         String xid = branchSession.getXid();
         String resourceId = branchSession.getResourceId();
         long transactionId = branchSession.getTransactionId();
-
+        // order:72
         String lockKey = branchSession.getLockKey();
 
         return collectRowLocks(lockKey, resourceId, xid, transactionId, branchSession.getBranchId());

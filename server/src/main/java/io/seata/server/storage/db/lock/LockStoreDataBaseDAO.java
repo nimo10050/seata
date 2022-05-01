@@ -117,7 +117,7 @@ public class LockStoreDataBaseDAO implements LockStore {
                 sj.add("?");
             }
             boolean canLock = true;
-            //query
+            // query
             String checkLockSQL = LockStoreSqlFactory.getLogStoreSql(dbType).getCheckLockableSql(lockTable, sj.toString());
             ps = conn.prepareStatement(checkLockSQL);
             for (int i = 0; i < lockDOs.size(); i++) {
@@ -152,6 +152,7 @@ public class LockStoreDataBaseDAO implements LockStore {
             } else {
                 unrepeatedLockDOs = lockDOs;
             }
+            // 第二个分支事务进来后
             if (CollectionUtils.isEmpty(unrepeatedLockDOs)) {
                 conn.rollback();
                 return true;
@@ -159,6 +160,7 @@ public class LockStoreDataBaseDAO implements LockStore {
             //lock
             if (unrepeatedLockDOs.size() == 1) {
                 LockDO lockDO = unrepeatedLockDOs.get(0);
+                // insert
                 if (!doAcquireLock(conn, lockDO)) {
                     if (LOGGER.isInfoEnabled()) {
                         LOGGER.info("Global lock acquire failed, xid {} branchId {} pk {}", lockDO.getXid(), lockDO.getBranchId(), lockDO.getPk());

@@ -123,16 +123,25 @@ public class DefaultCore implements Core {
     @Override
     public String begin(String applicationId, String transactionServiceGroup, String name, int timeout)
         throws TransactionException {
+
+        // new 了一个 GlobalSession
         GlobalSession session = GlobalSession.createGlobalSession(applicationId, transactionServiceGroup, name,
             timeout);
+
+        // 监听器
         session.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
 
+        // 这里就是执行 insert 语句
+        // insert into global_table(xid, transaction_id, status, application_id, transaction_service_group,
+        //    transaction_name, timeout, begin_time, application_data, gmt_create, gmt_modified)
+        // values (?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now())
         session.begin();
 
         // transaction start event
         eventBus.post(new GlobalTransactionEvent(session.getTransactionId(), GlobalTransactionEvent.ROLE_TC,
             session.getTransactionName(), session.getBeginTime(), null, session.getStatus()));
 
+        // 返回 xid 给 TM
         return session.getXid();
     }
 
@@ -147,9 +156,12 @@ public class DefaultCore implements Core {
 
         boolean shouldCommit = SessionHolder.lockAndExecute(globalSession, () -> {
             // Highlight: Firstly, close the session, then no more branch can be registered.
+            // globalSession 设为 !active && 删除 lock_table 数据
             globalSession.closeAndClean();
             if (globalSession.getStatus() == GlobalStatus.Begin) {
+                // AT 模式必走这里
                 if (globalSession.canBeCommittedAsync()) {
+                    // globbalSession  status -> 8
                     globalSession.asyncCommit();
                     return false;
                 } else {
@@ -160,7 +172,9 @@ public class DefaultCore implements Core {
             return false;
         });
 
+        // AT 模式 这里就是 false
         if (shouldCommit) {
+            LOGGER.debug(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
             boolean success = doGlobalCommit(globalSession, false);
             //If successful and all remaining branches can be committed asynchronously, do async commit.
             if (success && globalSession.hasBranch() && globalSession.canBeCommittedAsync()) {
@@ -174,6 +188,13 @@ public class DefaultCore implements Core {
         }
     }
 
+    /**
+     * io.seata.server.coordinator.DefaultCoordinator#handleAsyncCommitting() 方法会调用这个方法
+     * @param globalSession the global session
+     * @param retrying      the retrying
+     * @return
+     * @throws TransactionException
+     */
     @Override
     public boolean doGlobalCommit(GlobalSession globalSession, boolean retrying) throws TransactionException {
         boolean success = true;
@@ -185,6 +206,7 @@ public class DefaultCore implements Core {
             success = getCore(BranchType.SAGA).doGlobalCommit(globalSession, retrying);
         } else {
             for (BranchSession branchSession : globalSession.getSortedBranches()) {
+                // 这里不会执行
                 // if not retrying, skip the canBeCommittedAsync branches
                 if (!retrying && branchSession.canBeCommittedAsync()) {
                     continue;
@@ -195,10 +217,13 @@ public class DefaultCore implements Core {
                     globalSession.removeBranch(branchSession);
                     continue;
                 }
+
                 try {
+                    // send committed message
                     BranchStatus branchStatus = getCore(branchSession.getBranchType()).branchCommit(globalSession, branchSession);
 
                     switch (branchStatus) {
+                        // 进到这里
                         case PhaseTwo_Committed:
                             globalSession.removeBranch(branchSession);
                             continue;
@@ -245,6 +270,9 @@ public class DefaultCore implements Core {
         }
         //If success and there is no branch, end the global transaction.
         if (success && globalSession.getBranchSessions().isEmpty()) {
+            // 修改 global_table status -> 9 (committed)
+            // 删除 lock_table
+            // 删除 global_table
             SessionHelper.endCommitted(globalSession);
 
             // committed event

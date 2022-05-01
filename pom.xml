@@ -235,16 +235,16 @@
                 </plugins>
             </build>
 
-            <distributionManagement>
-                <snapshotRepository>
-                    <id>oss_seata</id>
-                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>
-                </snapshotRepository>
-                <repository>
-                    <id>oss_seata</id>
-                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
-                </repository>
-            </distributionManagement>
+<!--            <distributionManagement>-->
+<!--                <snapshotRepository>-->
+<!--                    <id>oss_seata</id>-->
+<!--                    <url>https://oss.sonatype.org/content/repositories/snapshots</url>-->
+<!--                </snapshotRepository>-->
+<!--                <repository>-->
+<!--                    <id>oss_seata</id>-->
+<!--                    <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>-->
+<!--                </repository>-->
+<!--            </distributionManagement>-->
             <properties>
                 <image.publish.skip>false</image.publish.skip>
                 <image.tags>${project.version},latest</image.tags>
@@ -463,11 +463,11 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-surefire-plugin</artifactId>
-                <version>${maven-surefire-plugin.version}</version>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-surefire-plugin</artifactId>-->
+<!--                <version>${maven-surefire-plugin.version}</version>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>

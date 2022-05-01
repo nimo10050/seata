@@ -191,8 +191,9 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
     @Override
     public void end() throws TransactionException {
         // Clean locks first
+        // 删除 lock_table
         clean();
-
+        // 删除 global_table
         for (SessionLifecycleListener lifecycleListener : lifecycleListeners) {
             lifecycleListener.onEnd(this);
         }
@@ -210,7 +211,9 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
      * @throws TransactionException the transaction exception
      */
     public void closeAndClean() throws TransactionException {
+        // global_session active 只为 false
         close();
+        // 删除 lock_table 数据
         clean();
 
     }
@@ -247,9 +250,11 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
         if (!branchSession.unlock()) {
             throw new TransactionException("Unlock branch lock failed!");
         }
+        // 删除 db 中的session
         for (SessionLifecycleListener lifecycleListener : lifecycleListeners) {
             lifecycleListener.onRemoveBranch(this, branchSession);
         }
+        // 删除内存中的 session
         remove(branchSession);
     }
 
@@ -649,6 +654,7 @@ public class GlobalSession implements SessionLifecycle, SessionStorable {
     public void asyncCommit() throws TransactionException {
         this.addSessionLifecycleListener(SessionHolder.getAsyncCommittingSessionManager());
         SessionHolder.getAsyncCommittingSessionManager().addGlobalSession(this);
+        // global_table status -> 8
         this.changeStatus(GlobalStatus.AsyncCommitting);
     }
 
