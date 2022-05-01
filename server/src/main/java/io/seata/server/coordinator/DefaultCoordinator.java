@@ -153,6 +153,8 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     @Override
     protected void doGlobalBegin(GlobalBeginRequest request, GlobalBeginResponse response, RpcContext rpcContext)
         throws TransactionException {
+
+        // TC 接收 TM 开启全局事务请求入口
         response.setXid(core.begin(rpcContext.getApplicationId(), rpcContext.getTransactionServiceGroup(),
             request.getTransactionName(), request.getTimeout()));
         if (LOGGER.isInfoEnabled()) {
@@ -164,6 +166,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     @Override
     protected void doGlobalCommit(GlobalCommitRequest request, GlobalCommitResponse response, RpcContext rpcContext)
         throws TransactionException {
+        // TC 全局事务提交入口
         response.setGlobalStatus(core.commit(request.getXid()));
     }
 
@@ -323,6 +326,8 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     }
 
     /**
+     * io.seata.server.coordinator.DefaultCoordinator#init() 会初始化一个定时任务
+     * 默认每隔 1s 执行该方法
      * Handle async committing.
      */
     protected void handleAsyncCommitting() {
@@ -338,6 +343,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
                     continue;
                 }
                 asyncCommittingSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
+                // 这里
                 core.doGlobalCommit(asyncCommittingSession, true);
             } catch (TransactionException ex) {
                 LOGGER.error("Failed to async committing [{}] {} {}", asyncCommittingSession.getXid(), ex.getCode(), ex.getMessage(), ex);
@@ -375,6 +381,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
      * Init.
      */
     public void init() {
+        // 重试rollback定时任务，用于将那些失败的rollback进行重试的，默认每隔 1s 执行一次。
         retryRollbacking.scheduleAtFixedRate(() -> {
             try {
                 handleRetryRollbacking();
@@ -382,7 +389,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
                 LOGGER.info("Exception retry rollbacking ... ", e);
             }
         }, 0, ROLLBACKING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 重试commit定时任务，用于将那些失败的commit进行重试的，默认每隔 1s 执行一次。
         retryCommitting.scheduleAtFixedRate(() -> {
             try {
                 handleRetryCommitting();
@@ -390,7 +397,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
                 LOGGER.info("Exception retry committing ... ", e);
             }
         }, 0, COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 异步commit定时任务，用于执行异步的commit，默认每隔 1s 一次。
         asyncCommitting.scheduleAtFixedRate(() -> {
             try {
                 handleAsyncCommitting();
@@ -398,7 +405,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
                 LOGGER.info("Exception async committing ... ", e);
             }
         }, 0, ASYNC_COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 超时定时任务检测，用于检测超时的任务，然后执行超时的逻辑，默认每隔 1s 执行一次。
         timeoutCheck.scheduleAtFixedRate(() -> {
             try {
                 timeoutCheck();
@@ -406,7 +413,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
                 LOGGER.info("Exception timeout checking ... ", e);
             }
         }, 0, TIMEOUT_RETRY_PERIOD, TimeUnit.MILLISECONDS);
-
+        // 定时删除 undo_log 任务， 默认每隔 24 小时 执行一次
         undoLogDelete.scheduleAtFixedRate(() -> {
             try {
                 undoLogDelete();
