@@ -243,6 +243,7 @@ class NettyClientChannelManager {
                     ((RegisterRMRequest) previousPoolKey.getMessage()).setResourceIds(registerRMRequest.getResourceIds());
                 }
             }
+            // 这里会触发 client 端的 bootstrap.connect(); 从而获取一个新的 Channel
             channelFromPool = nettyClientKeyPool.borrowObject(poolKeyMap.get(serverAddress));
             channels.put(serverAddress, channelFromPool);
         } catch (Exception exx) {
