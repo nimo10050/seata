@@ -52,6 +52,13 @@ public class PreparedStatementProxy extends AbstractPreparedStatementProxy
 
     @Override
     public boolean execute() throws SQLException {
+        // 根据 sqlRecognizer 生成对应的 sqlExecutor
+        // 然后调用 sqlExecutor.execute()
+        // doExecute
+        // executeAutoCommitFalse
+        //          beforeImage();
+        //          statementCallback.execute(statementProxy.getTargetStatement(), args);
+        //          afterImage(beforeImage);
         return ExecuteTemplate.execute(this, (statement, args) -> statement.execute());
     }
 

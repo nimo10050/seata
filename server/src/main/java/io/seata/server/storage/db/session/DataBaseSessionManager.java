@@ -84,6 +84,7 @@ public class DataBaseSessionManager extends AbstractSessionManager
                 throw new StoreException("addGlobalSession failed.");
             }
         } else {
+            // 全局事务提交
             boolean ret = transactionStoreManager.writeSession(LogOperation.GLOBAL_UPDATE, session);
             if (!ret) {
                 throw new StoreException("addGlobalSession failed.");

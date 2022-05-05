@@ -60,6 +60,7 @@ public class TransactionalTemplate {
         Propagation propagation = txInfo.getPropagation();
         SuspendedResourcesHolder suspendedResourcesHolder = null;
         try {
+            // 默认 REQUIRED
             switch (propagation) {
                 case NOT_SUPPORTED:
                     // If transaction is existing, suspend it.
@@ -212,6 +213,7 @@ public class TransactionalTemplate {
     private void beginTransaction(TransactionInfo txInfo, GlobalTransaction tx) throws TransactionalExecutor.ExecutionException {
         try {
             triggerBeforeBegin();
+            // DefaultGlobalTransaction
             tx.begin(txInfo.getTimeOut(), txInfo.getName());
             triggerAfterBegin();
         } catch (TransactionException txe) {

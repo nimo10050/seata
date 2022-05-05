@@ -244,6 +244,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
     @Override
     protected void doGlobalCommit(GlobalCommitRequest request, GlobalCommitResponse response, RpcContext rpcContext)
             throws TransactionException {
+        // 全局事务提交
         MDC.put(RootContext.MDC_KEY_XID, request.getXid());
         response.setGlobalStatus(core.commit(request.getXid()));
     }

@@ -165,7 +165,7 @@ public class DefaultCore implements Core {
             }
             return false;
         });
-
+        // false
         if (shouldCommit) {
             boolean success = doGlobalCommit(globalSession, false);
             //If successful and all remaining branches can be committed asynchronously, do async commit.
@@ -189,6 +189,7 @@ public class DefaultCore implements Core {
         if (globalSession.isSaga()) {
             success = getCore(BranchType.SAGA).doGlobalCommit(globalSession, retrying);
         } else {
+            // 查找所有的分支事务， 并通知分支事务二阶段提交。
             Boolean result = SessionHelper.forEach(globalSession.getSortedBranches(), branchSession -> {
                 // if not retrying, skip the canBeCommittedAsync branches
                 if (!retrying && branchSession.canBeCommittedAsync()) {
