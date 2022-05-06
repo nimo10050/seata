@@ -202,6 +202,7 @@ public class DefaultCore implements Core {
                     return CONTINUE;
                 }
                 try {
+                    // 请求 RM 返回分支事务状态： 正常是 PhaseTwo_Committed
                     BranchStatus branchStatus = getCore(branchSession.getBranchType()).branchCommit(globalSession, branchSession);
                     if (isXaerNotaTimeout(globalSession,branchStatus)) {
                         LOGGER.info("Commit branch XAER_NOTA retry timeout, xid = {} branchId = {}", globalSession.getXid(), branchSession.getBranchId());
@@ -209,6 +210,7 @@ public class DefaultCore implements Core {
                     }
                     switch (branchStatus) {
                         case PhaseTwo_Committed:
+                            // 删除 branch_table
                             SessionHelper.removeBranch(globalSession, branchSession, !retrying);
                             return CONTINUE;
                         case PhaseTwo_CommitFailed_Unretryable:

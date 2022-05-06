@@ -62,6 +62,7 @@ public class NettyPoolableFactory implements KeyedPoolableObjectFactory<NettyPoo
         if (key.getMessage() == null) {
             throw new FrameworkException("register msg is null, role:" + key.getTransactionRole().name());
         }
+        // ???
         try {
             response = rpcRemotingClient.sendSyncRequest(tmpChannel, key.getMessage());
             if (!isRegisterSuccess(response, key.getTransactionRole())) {

@@ -431,6 +431,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
      */
     protected void handleAsyncCommitting() {
         SessionCondition sessionCondition = new SessionCondition(GlobalStatus.AsyncCommitting);
+        // 查询出所有状态为 AsyncCommitting 的全局事务
         Collection<GlobalSession> asyncCommittingSessions =
                 SessionHolder.getAsyncCommittingSessionManager().findGlobalSessions(sessionCondition);
         if (CollectionUtils.isEmpty(asyncCommittingSessions)) {
@@ -439,6 +440,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
         SessionHelper.forEach(asyncCommittingSessions, asyncCommittingSession -> {
             try {
                 asyncCommittingSession.addSessionLifecycleListener(SessionHolder.getRootSessionManager());
+                // 这里主要是通知分支事务， 做二阶段提交
                 core.doGlobalCommit(asyncCommittingSession, true);
             } catch (TransactionException ex) {
                 LOGGER.error("Failed to async committing [{}] {} {}", asyncCommittingSession.getXid(), ex.getCode(), ex.getMessage(), ex);
@@ -488,6 +490,7 @@ public class DefaultCoordinator extends AbstractTCInboundHandler implements Tran
             () -> SessionHolder.distributedLockAndExecute(RETRY_COMMITTING, this::handleRetryCommitting), 0,
             COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
 
+        // 处理异步提交的全局事务
         asyncCommitting.scheduleAtFixedRate(
             () -> SessionHolder.distributedLockAndExecute(ASYNC_COMMITTING, this::handleAsyncCommitting), 0,
             ASYNC_COMMITTING_RETRY_PERIOD, TimeUnit.MILLISECONDS);
