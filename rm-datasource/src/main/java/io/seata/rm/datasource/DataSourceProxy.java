@@ -113,6 +113,7 @@ public class DataSourceProxy extends AbstractDataSourceProxy implements Resource
             throw new IllegalStateException("can not init dataSource", e);
         }
         initResourceId();
+        // register rm RmRNettyRemotingClient#registerResource
         DefaultResourceManager.get().registerResource(this);
         if (ENABLE_TABLE_META_CHECKER_ENABLE) {
             tableMetaExecutor.scheduleAtFixedRate(() -> {
