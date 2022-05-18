@@ -209,6 +209,7 @@ public final class RmNettyRemotingClient extends AbstractNettyRemotingClient {
         }
     }
 
+    // mark 一下
     public void sendRegisterMessage(String serverAddress, Channel channel, String resourceId) {
         RegisterRMRequest message = new RegisterRMRequest(applicationId, transactionServiceGroup);
         message.setResourceIds(resourceId);
