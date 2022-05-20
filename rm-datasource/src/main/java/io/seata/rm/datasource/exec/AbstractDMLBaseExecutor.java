@@ -96,11 +96,15 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
         if (!JdbcConstants.MYSQL.equalsIgnoreCase(getDbType()) && isMultiPk()) {
             throw new NotSupportYetException("multi pk only support mysql!");
         }
+        // 前置镜像
         TableRecords beforeImage = beforeImage();
+        // 执行业务 sql  prepareStatement#execute
         T result = statementCallback.execute(statementProxy.getTargetStatement(), args);
         int updateCount = statementProxy.getUpdateCount();
         if (updateCount > 0) {
+            // 后置镜像
             TableRecords afterImage = afterImage(beforeImage);
+            // 这里只是把镜像放到了缓存中
             prepareUndoLog(beforeImage, afterImage);
         }
         return result;
@@ -140,7 +144,9 @@ public abstract class AbstractDMLBaseExecutor<T, S extends Statement> extends Ba
         try {
             connectionProxy.changeAutoCommit();
             return new LockRetryPolicy(connectionProxy).execute(() -> {
+                // 根据前置镜像和后置镜像，生成 undo_log, 执行业务 sql
                 T result = executeAutoCommitFalse(args);
+                // 注册分支事务、插入 undo_log, 并 提交事务
                 connectionProxy.commit();
                 return result;
             });

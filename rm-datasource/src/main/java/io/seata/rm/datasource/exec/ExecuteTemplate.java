@@ -94,6 +94,7 @@ public class ExecuteTemplate {
                                     new Object[]{statementProxy, statementCallback, sqlRecognizer});
                         break;
                     case UPDATE:
+                        // statementCallback
                         executor = new UpdateExecutor<>(statementProxy, statementCallback, sqlRecognizer);
                         break;
                     case DELETE:

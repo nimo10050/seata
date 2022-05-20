@@ -247,11 +247,13 @@ public class ConnectionProxy extends AbstractConnectionProxy {
 
     private void processGlobalTransactionCommit() throws SQLException {
         try {
+            // 注册分支事务
             register();
         } catch (TransactionException e) {
             recognizeLockKeyConflictException(e, context.buildLockKeys());
         }
         try {
+            // 插入 undo_log 表， 并提交
             UndoLogManagerFactory.getUndoLogManager(this.getDbType()).flushUndoLogs(this);
             targetConnection.commit();
         } catch (Throwable ex) {
